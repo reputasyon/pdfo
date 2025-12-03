@@ -2,6 +2,8 @@ export { default as SplashScreen } from './SplashScreen';
 export { default as Header } from './Header';
 export { default as HomePage } from './HomePage';
 export { default as SettingsPage } from './SettingsPage';
+export { default as EditorPage } from './EditorPage';
+export { default as CoverPreview } from './CoverPreview';
 export { default as QualitySelector } from './QualitySelector';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { UploadArea, ImageGrid } from './ImageUpload';

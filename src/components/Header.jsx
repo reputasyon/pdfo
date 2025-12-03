@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, PenTool } from 'lucide-react';
 import { Badge, IconButton } from './ui';
 import { useAppStore, useCompanyStore } from '../store';
 
@@ -29,7 +29,13 @@ const Header = () => {
               {images.length} fotoğraf
             </Badge>
           )}
-          
+
+          <IconButton
+            icon={PenTool}
+            onClick={() => setCurrentPage('editor')}
+            aria-label="Kapak Editörü"
+          />
+
           <div className="relative">
             <IconButton
               icon={Settings}
@@ -37,8 +43,8 @@ const Header = () => {
               aria-label="Ayarlar"
             />
             {!hasCompanyInfo && (
-              <span 
-                className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" 
+              <span
+                className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"
                 aria-hidden="true"
               />
             )}

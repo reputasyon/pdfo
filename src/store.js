@@ -114,13 +114,56 @@ export const useSettingsStore = create(
       defaultQuality: 'medium',
       autoDownload: false,
       showTutorial: true,
-      
+
       setDefaultQuality: (quality) => set({ defaultQuality: quality }),
       setAutoDownload: (auto) => set({ autoDownload: auto }),
       setShowTutorial: (show) => set({ showTutorial: show })
     }),
     {
       name: 'pdfo-settings-storage',
+      version: 1,
+    }
+  )
+);
+
+// Cover Editor store with persistence
+export const useCoverStore = create(
+  persist(
+    (set) => ({
+      coverInfo: {
+        logo: null,
+        brandName: '',
+        subtitle: '',
+        whatsapp1: '',
+        whatsapp2: '',
+        instagram: '',
+        telegram: '',
+        backgroundColor: '#ffffff',
+        brandColor: '#e91e8c',
+        textColor: '#333333'
+      },
+      setCoverInfo: (info) => set({ coverInfo: info }),
+      updateCoverField: (field, value) =>
+        set((state) => ({
+          coverInfo: { ...state.coverInfo, [field]: value }
+        })),
+      resetCoverInfo: () => set({
+        coverInfo: {
+          logo: null,
+          brandName: '',
+          subtitle: '',
+          whatsapp1: '',
+          whatsapp2: '',
+          instagram: '',
+          telegram: '',
+          backgroundColor: '#ffffff',
+          brandColor: '#e91e8c',
+          textColor: '#333333'
+        }
+      })
+    }),
+    {
+      name: 'pdfo-cover-storage',
       version: 1,
     }
   )
