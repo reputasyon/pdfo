@@ -207,15 +207,21 @@ const createSocialIcon = (type, size = 64) => {
   });
 };
 
+// Helper to get image dimensions
+const getImageDimensions = (src) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
 // Generate PDF with cover page and images
 export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   const { jsPDF } = await loadJsPDF();
 
-  // Determine orientation from coverInfo
-  const orientation = coverInfo.orientation === 'landscape' ? 'l' : 'p';
-  const pdf = new jsPDF(orientation, 'mm', 'a4');
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
+  const isAutoOrientation = coverInfo.orientation === 'auto';
   const margin = 10;
 
   const totalSteps = images.length + 1; // +1 for cover page
@@ -226,8 +232,26 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   const brandColor = hexToRgb(coverInfo.brandColor || '#e91e8c');
   const textColor = hexToRgb(coverInfo.textColor || '#333333');
 
+  // Determine cover page orientation
+  let coverOrientation = coverInfo.orientation === 'landscape' ? 'l' : 'p';
+
+  // For auto mode, use first image's ratio for cover page
+  if (isAutoOrientation && images.length > 0) {
+    try {
+      const firstImgDims = await getImageDimensions(images[0].preview);
+      coverOrientation = firstImgDims.width > firstImgDims.height ? 'l' : 'p';
+    } catch (e) {
+      coverOrientation = 'p'; // fallback to portrait
+    }
+  }
+
+  const pdf = new jsPDF(coverOrientation, 'mm', 'a4');
+
   // === COVER PAGE ===
   onProgress?.(0);
+
+  let pageWidth = pdf.internal.pageSize.getWidth();
+  let pageHeight = pdf.internal.pageSize.getHeight();
 
   // Background
   pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b);
@@ -239,8 +263,8 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   if (coverInfo.logo) {
     try {
       const logoData = await loadImageAsDataUrl(coverInfo.logo, 'high');
-      const maxLogoWidth = orientation === 'l' ? 100 : 80;
-      const maxLogoHeight = orientation === 'l' ? 40 : 50;
+      const maxLogoWidth = coverOrientation === 'l' ? 100 : 80;
+      const maxLogoHeight = coverOrientation === 'l' ? 40 : 50;
 
       const ratio = Math.min(maxLogoWidth / logoData.width, maxLogoHeight / logoData.height);
       const logoW = logoData.width * ratio;
@@ -256,7 +280,7 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   // Brand Name (like F-MOR)
   if (coverInfo.brandName) {
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(orientation === 'l' ? 56 : 48);
+    pdf.setFontSize(coverOrientation === 'l' ? 56 : 48);
     pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
     pdf.text(coverInfo.brandName, pageWidth / 2, yPos, { align: 'center' });
     yPos += 15;
@@ -265,7 +289,7 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   // Subtitle (like COLLECTION CATALOGUE)
   if (coverInfo.subtitle) {
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(orientation === 'l' ? 16 : 14);
+    pdf.setFontSize(coverOrientation === 'l' ? 16 : 14);
     pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
     // Add letter spacing effect
     const spacedSubtitle = coverInfo.subtitle.toUpperCase().split('').join(' ');
@@ -274,12 +298,12 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   }
 
   // Contact Info at bottom with proper icons
-  const contactY = pageHeight - (orientation === 'l' ? 25 : 30);
+  const contactY = pageHeight - (coverOrientation === 'l' ? 25 : 30);
   const hasContactInfo = coverInfo.whatsapp1 || coverInfo.whatsapp2 || coverInfo.instagram || coverInfo.telegram;
 
   if (hasContactInfo) {
-    const iconSize = orientation === 'l' ? 12 : 10;
-    const contactSpacing = orientation === 'l' ? 70 : 60;
+    const iconSize = coverOrientation === 'l' ? 12 : 10;
+    const contactSpacing = coverOrientation === 'l' ? 70 : 60;
 
     // Calculate how many contact items we have
     const contacts = [];
@@ -320,7 +344,7 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
 
       // Draw text
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(orientation === 'l' ? 11 : 10);
+      pdf.setFontSize(coverOrientation === 'l' ? 11 : 10);
       pdf.setTextColor(textColor.r, textColor.g, textColor.b);
 
       if (contact.type === 'whatsapp' && contact.values) {
@@ -338,14 +362,28 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
 
   // === PHOTO PAGES ===
   for (let i = 0; i < images.length; i++) {
-    pdf.addPage();
-
-    // White background for photos
-    pdf.setFillColor(255, 255, 255);
-    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-
     try {
       const imgData = await loadImageAsDataUrl(images[i].preview, quality);
+
+      // Determine page orientation for this image
+      let pageOrientation;
+      if (isAutoOrientation) {
+        // Auto: use image's aspect ratio
+        pageOrientation = imgData.width > imgData.height ? 'l' : 'p';
+      } else {
+        pageOrientation = coverInfo.orientation === 'landscape' ? 'l' : 'p';
+      }
+
+      // Add page with correct orientation
+      pdf.addPage('a4', pageOrientation);
+
+      // Update page dimensions for new orientation
+      pageWidth = pdf.internal.pageSize.getWidth();
+      pageHeight = pdf.internal.pageSize.getHeight();
+
+      // White background for photos
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2) - 10;
@@ -369,6 +407,12 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
       pdf.addImage(imgData.dataUrl, 'JPEG', x, y, finalWidth, finalHeight);
     } catch (imgErr) {
       console.error('Resim eklenemedi:', imgErr);
+      // Add a default portrait page for error
+      pdf.addPage();
+      pageWidth = pdf.internal.pageSize.getWidth();
+      pageHeight = pdf.internal.pageSize.getHeight();
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
       pdf.setFontSize(12);
       pdf.setTextColor(150, 150, 150);
       pdf.text('Resim yüklenemedi', pageWidth / 2, pageHeight / 2, { align: 'center' });

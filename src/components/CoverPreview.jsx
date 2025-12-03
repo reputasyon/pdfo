@@ -38,10 +38,11 @@ const CoverPreview = ({ coverInfo }) => {
 
   const hasContactInfo = whatsapp1 || whatsapp2 || instagram || telegram;
   const isLandscape = orientation === 'landscape';
+  const isAuto = orientation === 'auto';
 
   return (
     <div
-      className={`${isLandscape ? 'aspect-[4/3]' : 'aspect-[3/4]'} rounded-xl overflow-hidden shadow-2xl relative`}
+      className={`${isAuto ? 'aspect-square' : isLandscape ? 'aspect-[4/3]' : 'aspect-[3/4]'} rounded-xl overflow-hidden shadow-2xl relative`}
       style={{ backgroundColor }}
     >
       {/* Main Content Area */}
