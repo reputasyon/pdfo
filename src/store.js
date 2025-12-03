@@ -178,6 +178,7 @@ export const useProductDesignStore = create(
         id: null,
         name: '',
         modelCode: '',
+        orientation: 'portrait', // 'portrait' or 'landscape'
         images: [], // Array of image data URLs (max 4)
         colors: [
           { left: '', right: '' },
@@ -278,6 +279,7 @@ export const useProductDesignStore = create(
             id: null,
             name: '',
             modelCode: '',
+            orientation: 'portrait',
             images: [],
             colors: [
               { left: '', right: '' },
@@ -302,6 +304,7 @@ export const useProductDesignStore = create(
             id: null,
             name: '',
             modelCode: '',
+            orientation: 'portrait',
             images: [],
             colors: [
               { left: '', right: '' },

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   ArrowLeft, Plus, Trash2, Save, Download, Image as ImageIcon,
-  X, Edit2, FileText, Palette
+  X, Edit2, FileText, Palette, RectangleVertical, RectangleHorizontal
 } from 'lucide-react';
 import { Button, Input, Card, Modal, IconButton } from './ui';
 import { useAppStore, useProductDesignStore } from '../store';
@@ -124,14 +124,44 @@ const ProductDesignerPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Form */}
             <div className="space-y-4">
-              {/* Design Name */}
+              {/* Design Name & Orientation */}
               <Card>
                 <h3 className="font-semibold mb-3">Tasarım Bilgileri</h3>
                 <Input
                   placeholder="Tasarım adı (opsiyonel)"
                   value={currentDesign.name}
                   onChange={(e) => updateCurrentDesign('name', e.target.value)}
+                  className="mb-3"
                 />
+
+                {/* Orientation Selector */}
+                <div>
+                  <label className="text-sm text-slate-400 mb-2 block">Sayfa Yönü</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateCurrentDesign('orientation', 'portrait')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                        currentDesign.orientation === 'portrait'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-600 hover:border-slate-500'
+                      }`}
+                    >
+                      <RectangleVertical className="w-5 h-5" />
+                      <span className="font-medium">Dikey</span>
+                    </button>
+                    <button
+                      onClick={() => updateCurrentDesign('orientation', 'landscape')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                        currentDesign.orientation === 'landscape'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-600 hover:border-slate-500'
+                      }`}
+                    >
+                      <RectangleHorizontal className="w-5 h-5" />
+                      <span className="font-medium">Yatay</span>
+                    </button>
+                  </div>
+                </div>
               </Card>
 
               {/* Images */}
@@ -451,11 +481,12 @@ const ProductPreview = ({ design }) => {
   const headerStyle = { backgroundColor: design.headerColor, color: '#ffffff' };
   const textStyle = { color: design.textColor };
 
-  const hasColors = design.colors.some(c => c.left || c.right);
+  const isLandscape = design.orientation === 'landscape';
+  const aspectClass = isLandscape ? 'aspect-[297/210]' : 'aspect-[210/297]';
 
   return (
     <div
-      className="aspect-[210/297] rounded-lg overflow-hidden border border-slate-600 relative"
+      className={`${aspectClass} rounded-lg overflow-hidden border border-slate-600 relative`}
       style={bgStyle}
     >
       {/* Side Watermark */}
