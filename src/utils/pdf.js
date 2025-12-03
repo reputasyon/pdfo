@@ -122,11 +122,98 @@ const hexToRgb = (hex) => {
   } : { r: 255, g: 255, b: 255 };
 };
 
+// Create social media icon as canvas image
+const createSocialIcon = (type, size = 64) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2;
+
+    // Draw circle background
+    ctx.beginPath();
+    if (type === 'whatsapp') {
+      ctx.fillStyle = '#25D366';
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      // Draw WhatsApp phone icon
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${size * 0.5}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📞', centerX, centerY);
+    } else if (type === 'instagram') {
+      // Instagram gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#f09433');
+      gradient.addColorStop(0.25, '#e6683c');
+      gradient.addColorStop(0.5, '#dc2743');
+      gradient.addColorStop(0.75, '#cc2366');
+      gradient.addColorStop(1, '#bc1888');
+      ctx.fillStyle = gradient;
+      // Rounded square for Instagram
+      const cornerRadius = size * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(cornerRadius, 0);
+      ctx.lineTo(size - cornerRadius, 0);
+      ctx.quadraticCurveTo(size, 0, size, cornerRadius);
+      ctx.lineTo(size, size - cornerRadius);
+      ctx.quadraticCurveTo(size, size, size - cornerRadius, size);
+      ctx.lineTo(cornerRadius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - cornerRadius);
+      ctx.lineTo(0, cornerRadius);
+      ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
+      ctx.fill();
+      // Draw camera icon
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = size * 0.06;
+      const inset = size * 0.2;
+      // Outer rounded rect
+      ctx.beginPath();
+      ctx.roundRect(inset, inset, size - inset * 2, size - inset * 2, size * 0.1);
+      ctx.stroke();
+      // Center circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.2, 0, Math.PI * 2);
+      ctx.stroke();
+      // Small circle top right
+      ctx.beginPath();
+      ctx.arc(size - inset - size * 0.12, inset + size * 0.12, size * 0.05, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    } else if (type === 'telegram') {
+      ctx.fillStyle = '#0088cc';
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      // Draw paper plane
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      const planeSize = size * 0.5;
+      const startX = centerX - planeSize * 0.4;
+      const startY = centerY;
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX + planeSize, startY - planeSize * 0.3);
+      ctx.lineTo(startX + planeSize * 0.4, startY + planeSize * 0.4);
+      ctx.lineTo(startX + planeSize * 0.5, startY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    resolve(canvas.toDataURL('image/png'));
+  });
+};
+
 // Generate PDF with cover page and images
 export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   const { jsPDF } = await loadJsPDF();
 
-  const pdf = new jsPDF('p', 'mm', 'a4');
+  // Determine orientation from coverInfo
+  const orientation = coverInfo.orientation === 'landscape' ? 'l' : 'p';
+  const pdf = new jsPDF(orientation, 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 10;
@@ -146,21 +233,21 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  let yPos = pageHeight * 0.35; // Start at ~35% from top
+  let yPos = pageHeight * 0.4; // Start at ~40% from top
 
   // Company Logo
   if (coverInfo.logo) {
     try {
       const logoData = await loadImageAsDataUrl(coverInfo.logo, 'high');
-      const maxLogoWidth = 80;
-      const maxLogoHeight = 50;
+      const maxLogoWidth = orientation === 'l' ? 100 : 80;
+      const maxLogoHeight = orientation === 'l' ? 40 : 50;
 
       const ratio = Math.min(maxLogoWidth / logoData.width, maxLogoHeight / logoData.height);
       const logoW = logoData.width * ratio;
       const logoH = logoData.height * ratio;
 
       const logoX = (pageWidth - logoW) / 2;
-      pdf.addImage(logoData.dataUrl, 'JPEG', logoX, yPos - logoH - 10, logoW, logoH);
+      pdf.addImage(logoData.dataUrl, 'JPEG', logoX, yPos - logoH - 15, logoW, logoH);
     } catch (e) {
       console.warn('Logo eklenemedi:', e);
     }
@@ -169,34 +256,30 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   // Brand Name (like F-MOR)
   if (coverInfo.brandName) {
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(48);
+    pdf.setFontSize(orientation === 'l' ? 56 : 48);
     pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
     pdf.text(coverInfo.brandName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 12;
+    yPos += 15;
   }
 
   // Subtitle (like COLLECTION CATALOGUE)
   if (coverInfo.subtitle) {
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(14);
+    pdf.setFontSize(orientation === 'l' ? 16 : 14);
     pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
-    // Add letter spacing effect by splitting and rejoining with spaces
+    // Add letter spacing effect
     const spacedSubtitle = coverInfo.subtitle.toUpperCase().split('').join(' ');
     pdf.text(spacedSubtitle, pageWidth / 2, yPos + 5, { align: 'center' });
     yPos += 20;
   }
 
-  // Contact Info at bottom
-  const contactY = pageHeight - 35;
+  // Contact Info at bottom with proper icons
+  const contactY = pageHeight - (orientation === 'l' ? 25 : 30);
   const hasContactInfo = coverInfo.whatsapp1 || coverInfo.whatsapp2 || coverInfo.instagram || coverInfo.telegram;
 
   if (hasContactInfo) {
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.setTextColor(textColor.r, textColor.g, textColor.b);
-
-    let contactX = margin + 20;
-    const contactSpacing = 55;
+    const iconSize = orientation === 'l' ? 12 : 10;
+    const contactSpacing = orientation === 'l' ? 70 : 60;
 
     // Calculate how many contact items we have
     const contacts = [];
@@ -213,31 +296,41 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
 
     // Center the contacts
     const totalWidth = contacts.length * contactSpacing;
-    contactX = (pageWidth - totalWidth) / 2 + contactSpacing / 2;
+    let contactX = (pageWidth - totalWidth) / 2 + iconSize;
 
-    contacts.forEach((contact, index) => {
-      const x = contactX + (index * contactSpacing);
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      const x = contactX + (i * contactSpacing);
 
-      // Draw colored circle for icon
-      if (contact.type === 'whatsapp') {
-        pdf.setFillColor(37, 211, 102); // WhatsApp green
-        pdf.circle(x - 15, contactY, 5, 'F');
-        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
-        contact.values.forEach((phone, i) => {
-          pdf.text(phone, x - 5, contactY + 1 + (i * 5), { align: 'left' });
-        });
-      } else if (contact.type === 'instagram') {
-        pdf.setFillColor(225, 48, 108); // Instagram pink
-        pdf.circle(x - 15, contactY, 5, 'F');
-        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
-        pdf.text(contact.value, x - 5, contactY + 1, { align: 'left' });
-      } else if (contact.type === 'telegram') {
-        pdf.setFillColor(0, 136, 204); // Telegram blue
-        pdf.circle(x - 15, contactY, 5, 'F');
-        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
-        pdf.text(contact.value, x - 5, contactY + 1, { align: 'left' });
+      // Draw social media icon
+      try {
+        const iconDataUrl = await createSocialIcon(contact.type, 128);
+        pdf.addImage(iconDataUrl, 'PNG', x - iconSize / 2, contactY - iconSize / 2, iconSize, iconSize);
+      } catch (e) {
+        // Fallback to colored circle
+        if (contact.type === 'whatsapp') {
+          pdf.setFillColor(37, 211, 102);
+        } else if (contact.type === 'instagram') {
+          pdf.setFillColor(225, 48, 108);
+        } else if (contact.type === 'telegram') {
+          pdf.setFillColor(0, 136, 204);
+        }
+        pdf.circle(x, contactY, iconSize / 2, 'F');
       }
-    });
+
+      // Draw text
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(orientation === 'l' ? 11 : 10);
+      pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+
+      if (contact.type === 'whatsapp' && contact.values) {
+        contact.values.forEach((phone, idx) => {
+          pdf.text(phone, x + iconSize / 2 + 3, contactY + 1 + (idx * 5), { align: 'left' });
+        });
+      } else if (contact.value) {
+        pdf.text(contact.value, x + iconSize / 2 + 3, contactY + 1, { align: 'left' });
+      }
+    }
   }
 
   currentStep++;

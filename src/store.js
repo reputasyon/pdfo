@@ -140,7 +140,8 @@ export const useCoverStore = create(
         telegram: '',
         backgroundColor: '#ffffff',
         brandColor: '#e91e8c',
-        textColor: '#333333'
+        textColor: '#333333',
+        orientation: 'portrait' // 'portrait' or 'landscape'
       },
       setCoverInfo: (info) => set({ coverInfo: info }),
       updateCoverField: (field, value) =>
@@ -158,7 +159,8 @@ export const useCoverStore = create(
           telegram: '',
           backgroundColor: '#ffffff',
           brandColor: '#e91e8c',
-          textColor: '#333333'
+          textColor: '#333333',
+          orientation: 'portrait'
         }
       })
     }),
