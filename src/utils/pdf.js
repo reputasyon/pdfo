@@ -324,9 +324,11 @@ export const downloadPDF = (pdfUrl, brandName) => {
 export const generateProductPDF = async (design, onProgress) => {
   const { jsPDF } = await loadJsPDF();
 
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
-  const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+  // Determine orientation: 'p' for portrait, 'l' for landscape
+  const orientation = design.orientation === 'landscape' ? 'l' : 'p';
+  const pdf = new jsPDF(orientation, 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth(); // 297mm for landscape, 210mm for portrait
+  const pageHeight = pdf.internal.pageSize.getHeight(); // 210mm for landscape, 297mm for portrait
 
   onProgress?.(10);
 
