@@ -40,11 +40,86 @@ const HomePage = () => {
     downloadPDF(pdfUrl, companyInfo.name);
   };
 
+  // Native share function
+  const handleNativeShare = async () => {
+    if (!pdfUrl) return;
+
+    try {
+      // Convert blob URL to blob
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const fileName = companyInfo.name
+        ? `${companyInfo.name.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ\s]/g, '')}_katalog.pdf`
+        : 'katalog.pdf';
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: fileName,
+          text: companyInfo.name ? `${companyInfo.name} Kataloğu` : 'PDF Kataloğu'
+        });
+        setShowShareMenu(false);
+      } else {
+        // Fallback: download
+        handleDownload();
+        setShowShareMenu(false);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Share failed:', error);
+        handleDownload();
+      }
+      setShowShareMenu(false);
+    }
+  };
+
+  // WhatsApp share
+  const handleWhatsAppShare = async () => {
+    // First download the file
+    handleDownload();
+
+    // Open WhatsApp with a message
+    const message = companyInfo.name
+      ? `${companyInfo.name} Kataloğu - PDF dosyası indirildi, lütfen ekleyin.`
+      : 'PDF Kataloğu - Dosya indirildi, lütfen ekleyin.';
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    setShowShareMenu(false);
+  };
+
+  // Telegram share
+  const handleTelegramShare = async () => {
+    handleDownload();
+
+    const message = companyInfo.name
+      ? `${companyInfo.name} Kataloğu`
+      : 'PDF Kataloğu';
+
+    const telegramUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+    window.open(telegramUrl, '_blank');
+    setShowShareMenu(false);
+  };
+
+  // Email share
+  const handleEmailShare = () => {
+    handleDownload();
+
+    const subject = companyInfo.name
+      ? `${companyInfo.name} Kataloğu`
+      : 'PDF Kataloğu';
+    const body = 'PDF kataloğu ekte bulunmaktadır.';
+
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setShowShareMenu(false);
+  };
+
   const shareOptions = [
-    { name: 'WhatsApp', color: 'bg-green-500', icon: '💬' },
-    { name: 'E-posta', color: 'bg-blue-500', icon: '✉️' },
-    { name: 'Telegram', color: 'bg-sky-500', icon: '📨' },
-    { name: 'İndir', color: 'bg-slate-600', icon: '📁' },
+    { name: 'Paylaş', color: 'bg-orange-500', icon: '📤', action: handleNativeShare },
+    { name: 'WhatsApp', color: 'bg-green-500', icon: '💬', action: handleWhatsAppShare },
+    { name: 'Telegram', color: 'bg-sky-500', icon: '📨', action: handleTelegramShare },
+    { name: 'E-posta', color: 'bg-blue-500', icon: '✉️', action: handleEmailShare },
   ];
 
   return (
@@ -259,10 +334,7 @@ const HomePage = () => {
           {shareOptions.map((option) => (
             <button
               key={option.name}
-              onClick={() => {
-                handleDownload();
-                setShowShareMenu(false);
-              }}
+              onClick={option.action}
               className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-slate-700/50 transition-colors"
             >
               <div className={`w-14 h-14 ${option.color} rounded-2xl flex items-center justify-center text-2xl`}>
