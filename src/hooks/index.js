@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadJsPDF, generatePDF, estimatePdfSize } from '../utils/pdf';
 import { processUploadedFiles, revokeImageUrls, MAX_IMAGES } from '../utils/image';
-import { useAppStore, useCompanyStore } from '../store';
+import { useAppStore, useCoverStore } from '../store';
 
 // Hook for jsPDF loading
 export const useJsPDF = () => {
@@ -96,8 +96,8 @@ export const useImages = () => {
 
 // Hook for PDF generation
 export const usePdfGenerator = () => {
-  const { 
-    images, 
+  const {
+    images,
     selectedQuality,
     setIsConverting,
     setConversionProgress,
@@ -107,10 +107,10 @@ export const usePdfGenerator = () => {
     setErrorMessage,
     setShowQualityModal
   } = useAppStore();
-  
-  const { companyInfo } = useCompanyStore();
+
+  const { coverInfo } = useCoverStore();
   const { loaded: jsPdfLoaded } = useJsPDF();
-  
+
   const pdfBlobRef = useRef(null);
 
   const generatePdf = useCallback(async () => {
@@ -131,8 +131,8 @@ export const usePdfGenerator = () => {
 
     try {
       const result = await generatePDF(
-        images, 
-        companyInfo, 
+        images,
+        coverInfo,
         selectedQuality,
         setConversionProgress
       );
@@ -141,7 +141,7 @@ export const usePdfGenerator = () => {
       setPdfUrl(result.url);
       setPdfSize(result.formattedSize);
       setPdfReady(true);
-      
+
       return result;
     } catch (error) {
       console.error('PDF oluşturma hatası:', error);
@@ -151,9 +151,9 @@ export const usePdfGenerator = () => {
       setIsConverting(false);
     }
   }, [
-    images, 
-    companyInfo, 
-    selectedQuality, 
+    images,
+    coverInfo,
+    selectedQuality,
     jsPdfLoaded,
     setIsConverting,
     setConversionProgress,

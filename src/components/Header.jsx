@@ -1,13 +1,13 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { Badge, IconButton } from './ui';
-import { useAppStore, useCompanyStore } from '../store';
+import { useAppStore, useCoverStore } from '../store';
 
 const Header = () => {
   const { images, setCurrentPage } = useAppStore();
-  const { companyInfo } = useCompanyStore();
-  
-  const hasCompanyInfo = companyInfo.name || companyInfo.logo || companyInfo.phone;
+  const { coverInfo } = useCoverStore();
+
+  const hasCoverInfo = coverInfo.brandName || coverInfo.logo || coverInfo.whatsapp1;
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
@@ -21,7 +21,7 @@ const Header = () => {
             Pdf<span className="text-orange-400">o</span>
           </span>
         </div>
-        
+
         {/* Right side */}
         <div className="flex items-center gap-2">
           {images.length > 0 && (
@@ -36,7 +36,7 @@ const Header = () => {
               onClick={() => setCurrentPage('settings')}
               aria-label="Ayarlar"
             />
-            {!hasCompanyInfo && (
+            {!hasCoverInfo && (
               <span
                 className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"
                 aria-hidden="true"
