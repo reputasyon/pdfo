@@ -1,7 +1,8 @@
 import React from 'react';
 import {
   FileImage, Share2, Download, Image as ImageIcon,
-  ArrowRight, CheckCircle, HardDrive, Loader2
+  ArrowRight, CheckCircle, HardDrive, Loader2,
+  Smartphone, Monitor
 } from 'lucide-react';
 import Header from './Header';
 import { UploadArea, ImageGrid } from './ImageUpload';
@@ -29,7 +30,7 @@ const HomePage = () => {
     clearError
   } = useAppStore();
 
-  const { coverInfo } = useCoverStore();
+  const { coverInfo, updateCoverField } = useCoverStore();
   const { images, addImages, removeImage } = useImages();
   const { generatePdf, estimatedSize, isReady: jsPdfReady } = usePdfGenerator();
   const { loading: jsPdfLoading } = useJsPDF();
@@ -192,6 +193,61 @@ const HomePage = () => {
             <ArrowRight className="w-5 h-5 text-orange-400 flex-shrink-0" />
           </Card>
         )}
+
+        {/* Orientation Selector */}
+        <Card className="mb-6">
+          <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">
+            PDF Sayfa Yönü
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => updateCoverField('orientation', 'portrait')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                coverInfo.orientation === 'portrait'
+                  ? 'border-orange-500 bg-orange-500/10'
+                  : 'border-slate-600 hover:border-slate-500'
+              }`}
+            >
+              <div className={`w-10 h-14 rounded border-2 ${
+                coverInfo.orientation === 'portrait'
+                  ? 'border-orange-400 bg-orange-500/20'
+                  : 'border-slate-500'
+              }`}>
+                <Smartphone className={`w-full h-full p-1 ${
+                  coverInfo.orientation === 'portrait' ? 'text-orange-400' : 'text-slate-500'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                coverInfo.orientation === 'portrait' ? 'text-orange-400' : 'text-slate-400'
+              }`}>
+                Dikey
+              </span>
+            </button>
+            <button
+              onClick={() => updateCoverField('orientation', 'landscape')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                coverInfo.orientation === 'landscape'
+                  ? 'border-orange-500 bg-orange-500/10'
+                  : 'border-slate-600 hover:border-slate-500'
+              }`}
+            >
+              <div className={`w-14 h-10 rounded border-2 ${
+                coverInfo.orientation === 'landscape'
+                  ? 'border-orange-400 bg-orange-500/20'
+                  : 'border-slate-500'
+              }`}>
+                <Monitor className={`w-full h-full p-1 ${
+                  coverInfo.orientation === 'landscape' ? 'text-orange-400' : 'text-slate-500'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                coverInfo.orientation === 'landscape' ? 'text-orange-400' : 'text-slate-400'
+              }`}>
+                Yatay
+              </span>
+            </button>
+          </div>
+        </Card>
 
         {/* Upload Area */}
         <UploadArea
