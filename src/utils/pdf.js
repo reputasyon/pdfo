@@ -239,7 +239,8 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   if (isAutoOrientation && images.length > 0) {
     try {
       const firstImgDims = await getImageDimensions(images[0].preview);
-      coverOrientation = firstImgDims.width > firstImgDims.height ? 'l' : 'p';
+      // Square or landscape images use landscape, portrait images use portrait
+      coverOrientation = firstImgDims.width >= firstImgDims.height ? 'l' : 'p';
     } catch (e) {
       coverOrientation = 'p'; // fallback to portrait
     }
@@ -368,8 +369,8 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
       // Determine page orientation for this image
       let pageOrientation;
       if (isAutoOrientation) {
-        // Auto: use image's aspect ratio
-        pageOrientation = imgData.width > imgData.height ? 'l' : 'p';
+        // Auto: square or landscape images use landscape, portrait images use portrait
+        pageOrientation = imgData.width >= imgData.height ? 'l' : 'p';
       } else {
         pageOrientation = coverInfo.orientation === 'landscape' ? 'l' : 'p';
       }
