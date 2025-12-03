@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, LayoutTemplate } from 'lucide-react';
 import { Badge, IconButton } from './ui';
 import { useAppStore, useCoverStore } from '../store';
 
@@ -29,6 +29,13 @@ const Header = () => {
               {images.length} fotoğraf
             </Badge>
           )}
+
+          <IconButton
+            icon={LayoutTemplate}
+            onClick={() => setCurrentPage('designer')}
+            aria-label="Sayfa Tasarımcısı"
+            title="Sayfa Tasarımcısı"
+          />
 
           <div className="relative">
             <IconButton

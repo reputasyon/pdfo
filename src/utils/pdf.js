@@ -320,6 +320,215 @@ export const downloadPDF = (pdfUrl, brandName) => {
   document.body.removeChild(link);
 };
 
+// Generate Product Design PDF
+export const generateProductPDF = async (design, onProgress) => {
+  const { jsPDF } = await loadJsPDF();
+
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
+  const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+
+  onProgress?.(10);
+
+  // Get colors
+  const bgColor = hexToRgb(design.backgroundColor || '#ffffff');
+  const headerColor = hexToRgb(design.headerColor || '#000000');
+  const textColor = hexToRgb(design.textColor || '#333333');
+
+  // Background
+  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b);
+  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+  // Side watermark
+  if (design.brandWatermark) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(headerColor.r, headerColor.g, headerColor.b);
+
+    // Draw rotated watermark text along left side
+    const watermarkX = 8;
+    const watermarkSpacing = 40;
+    for (let i = 0; i < 7; i++) {
+      const y = 30 + (i * watermarkSpacing);
+      pdf.text(design.brandWatermark, watermarkX, y, { angle: 90 });
+    }
+  }
+
+  onProgress?.(30);
+
+  // Content area starts after watermark
+  const contentX = 20;
+  const contentWidth = pageWidth - contentX - 10;
+
+  // Image area
+  const imageAreaWidth = contentWidth * 0.55;
+  const imageAreaHeight = pageHeight - 30;
+  const imageX = contentX;
+  const imageY = 15;
+
+  // Load and place images
+  if (design.images && design.images.length > 0) {
+    try {
+      // Main image (large)
+      const mainImgData = await loadImageAsDataUrl(design.images[0], 'high');
+      const mainImgHeight = design.images.length > 1 ? imageAreaHeight * 0.75 : imageAreaHeight;
+
+      // Calculate aspect ratio
+      const mainRatio = mainImgData.width / mainImgData.height;
+      let mainW = imageAreaWidth;
+      let mainH = mainW / mainRatio;
+
+      if (mainH > mainImgHeight) {
+        mainH = mainImgHeight;
+        mainW = mainH * mainRatio;
+      }
+
+      const mainCenterX = imageX + (imageAreaWidth - mainW) / 2;
+      pdf.addImage(mainImgData.dataUrl, 'JPEG', mainCenterX, imageY, mainW, mainH);
+
+      onProgress?.(50);
+
+      // Secondary images (thumbnails at bottom)
+      if (design.images.length > 1) {
+        const thumbY = imageY + mainH + 5;
+        const thumbCount = Math.min(design.images.length - 1, 3);
+        const thumbWidth = (imageAreaWidth - (thumbCount - 1) * 3) / thumbCount;
+        const thumbHeight = imageAreaHeight - mainH - 10;
+
+        for (let i = 1; i <= thumbCount; i++) {
+          if (design.images[i]) {
+            try {
+              const thumbData = await loadImageAsDataUrl(design.images[i], 'medium');
+              const thumbRatio = thumbData.width / thumbData.height;
+              let tw = thumbWidth;
+              let th = tw / thumbRatio;
+
+              if (th > thumbHeight) {
+                th = thumbHeight;
+                tw = th * thumbRatio;
+              }
+
+              const thumbX = imageX + (i - 1) * (thumbWidth + 3) + (thumbWidth - tw) / 2;
+              pdf.addImage(thumbData.dataUrl, 'JPEG', thumbX, thumbY, tw, th);
+            } catch (e) {
+              console.warn('Thumbnail yüklenemedi:', e);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Ana görsel yüklenemedi:', e);
+    }
+  }
+
+  onProgress?.(70);
+
+  // Right panel - Info area
+  const infoPanelX = imageX + imageAreaWidth + 8;
+  const infoPanelWidth = contentWidth - imageAreaWidth - 8;
+  let infoY = imageY;
+
+  // Model Code Box
+  pdf.setDrawColor(headerColor.r, headerColor.g, headerColor.b);
+  pdf.setLineWidth(0.5);
+  pdf.rect(infoPanelX, infoY, infoPanelWidth, 12);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9);
+  pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+  pdf.text('Model Code :', infoPanelX + 3, infoY + 7);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(11);
+  pdf.text(design.modelCode || '', infoPanelX + 28, infoY + 7);
+
+  infoY += 16;
+
+  // Color Table
+  const tableHeight = 8;
+  const colWidth = infoPanelWidth / 2;
+
+  // Table Header
+  pdf.setFillColor(headerColor.r, headerColor.g, headerColor.b);
+  pdf.rect(infoPanelX, infoY, infoPanelWidth, tableHeight, 'F');
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text('COLOR', infoPanelX + colWidth / 2, infoY + 5.5, { align: 'center' });
+  pdf.text('PIECES', infoPanelX + colWidth + colWidth / 2, infoY + 5.5, { align: 'center' });
+
+  // Vertical line in header
+  pdf.setDrawColor(200, 200, 200);
+  pdf.line(infoPanelX + colWidth, infoY, infoPanelX + colWidth, infoY + tableHeight);
+
+  infoY += tableHeight;
+
+  // Table Rows
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+  pdf.setDrawColor(headerColor.r, headerColor.g, headerColor.b);
+
+  const filledColors = design.colors.filter(c => c.left || c.right);
+  const rowsToShow = filledColors.length > 0 ? filledColors : design.colors;
+
+  rowsToShow.forEach((row, index) => {
+    pdf.rect(infoPanelX, infoY, infoPanelWidth, tableHeight);
+    pdf.line(infoPanelX + colWidth, infoY, infoPanelX + colWidth, infoY + tableHeight);
+
+    if (row.left) {
+      pdf.text(row.left.toUpperCase(), infoPanelX + colWidth / 2, infoY + 5.5, { align: 'center' });
+    }
+    if (row.right) {
+      pdf.text(row.right.toUpperCase(), infoPanelX + colWidth + colWidth / 2, infoY + 5.5, { align: 'center' });
+    }
+
+    infoY += tableHeight;
+  });
+
+  infoY += 5;
+
+  // Sizes Box
+  pdf.setDrawColor(headerColor.r, headerColor.g, headerColor.b);
+  pdf.rect(infoPanelX, infoY, infoPanelWidth, 12);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+  pdf.text(design.sizes || '', infoPanelX + infoPanelWidth / 2, infoY + 7.5, { align: 'center' });
+
+  infoY += 18;
+
+  // Material Box
+  if (design.material) {
+    pdf.setFillColor(headerColor.r, headerColor.g, headerColor.b);
+    pdf.rect(infoPanelX, infoY, infoPanelWidth, 20, 'F');
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('MATERIAL', infoPanelX + infoPanelWidth / 2, infoY + 8, { align: 'center' });
+
+    pdf.setFontSize(8);
+    pdf.text(design.material.toUpperCase(), infoPanelX + infoPanelWidth / 2, infoY + 15, { align: 'center' });
+  }
+
+  onProgress?.(100);
+
+  // Generate blob
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+
+  return {
+    url,
+    blob,
+    size: blob.size,
+    formattedSize: formatFileSize(blob.size),
+    pageCount: 1
+  };
+};
+
 // Share PDF (Web Share API)
 export const sharePDF = async (pdfUrl, pdfBlob, brandName) => {
   const fileName = brandName

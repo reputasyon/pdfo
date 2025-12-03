@@ -168,3 +168,161 @@ export const useCoverStore = create(
     }
   )
 );
+
+// Product Designer store with persistence
+export const useProductDesignStore = create(
+  persist(
+    (set, get) => ({
+      // Current design being edited
+      currentDesign: {
+        id: null,
+        name: '',
+        modelCode: '',
+        images: [], // Array of image data URLs (max 4)
+        colors: [
+          { left: '', right: '' },
+          { left: '', right: '' },
+          { left: '', right: '' },
+          { left: '', right: '' },
+          { left: '', right: '' }
+        ],
+        sizes: '36/38/40/42/44',
+        material: '',
+        brandWatermark: '', // Side watermark text like F-MOR
+        backgroundColor: '#ffffff',
+        headerColor: '#000000',
+        textColor: '#333333'
+      },
+
+      // Saved designs list
+      savedDesigns: [],
+
+      // Actions for current design
+      updateCurrentDesign: (field, value) =>
+        set((state) => ({
+          currentDesign: { ...state.currentDesign, [field]: value }
+        })),
+
+      updateColorRow: (index, side, value) =>
+        set((state) => {
+          const newColors = [...state.currentDesign.colors];
+          newColors[index] = { ...newColors[index], [side]: value };
+          return { currentDesign: { ...state.currentDesign, colors: newColors } };
+        }),
+
+      addImageToDesign: (imageDataUrl) =>
+        set((state) => {
+          if (state.currentDesign.images.length >= 4) return state;
+          return {
+            currentDesign: {
+              ...state.currentDesign,
+              images: [...state.currentDesign.images, imageDataUrl]
+            }
+          };
+        }),
+
+      removeImageFromDesign: (index) =>
+        set((state) => ({
+          currentDesign: {
+            ...state.currentDesign,
+            images: state.currentDesign.images.filter((_, i) => i !== index)
+          }
+        })),
+
+      // Save current design
+      saveCurrentDesign: () =>
+        set((state) => {
+          const { currentDesign, savedDesigns } = state;
+          const newDesign = {
+            ...currentDesign,
+            id: currentDesign.id || Date.now().toString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          const existingIndex = savedDesigns.findIndex(d => d.id === newDesign.id);
+          let newSavedDesigns;
+
+          if (existingIndex >= 0) {
+            newSavedDesigns = [...savedDesigns];
+            newSavedDesigns[existingIndex] = newDesign;
+          } else {
+            newSavedDesigns = [...savedDesigns, newDesign];
+          }
+
+          return {
+            savedDesigns: newSavedDesigns,
+            currentDesign: newDesign
+          };
+        }),
+
+      // Load a saved design for editing
+      loadDesign: (designId) =>
+        set((state) => {
+          const design = state.savedDesigns.find(d => d.id === designId);
+          if (design) {
+            return { currentDesign: { ...design } };
+          }
+          return state;
+        }),
+
+      // Delete a saved design
+      deleteDesign: (designId) =>
+        set((state) => ({
+          savedDesigns: state.savedDesigns.filter(d => d.id !== designId)
+        })),
+
+      // Create new design (reset current)
+      createNewDesign: () =>
+        set({
+          currentDesign: {
+            id: null,
+            name: '',
+            modelCode: '',
+            images: [],
+            colors: [
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' }
+            ],
+            sizes: '36/38/40/42/44',
+            material: '',
+            brandWatermark: '',
+            backgroundColor: '#ffffff',
+            headerColor: '#000000',
+            textColor: '#333333'
+          }
+        }),
+
+      // Reset store
+      resetProductDesignStore: () =>
+        set({
+          currentDesign: {
+            id: null,
+            name: '',
+            modelCode: '',
+            images: [],
+            colors: [
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' },
+              { left: '', right: '' }
+            ],
+            sizes: '36/38/40/42/44',
+            material: '',
+            brandWatermark: '',
+            backgroundColor: '#ffffff',
+            headerColor: '#000000',
+            textColor: '#333333'
+          },
+          savedDesigns: []
+        })
+    }),
+    {
+      name: 'pdfo-product-design-storage',
+      version: 1,
+    }
+  )
+);
