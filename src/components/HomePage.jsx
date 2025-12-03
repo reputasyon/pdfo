@@ -2,7 +2,7 @@ import React from 'react';
 import {
   FileImage, Share2, Download, Image as ImageIcon,
   ArrowRight, CheckCircle, HardDrive, Loader2,
-  Smartphone, Monitor
+  Smartphone, Monitor, Maximize
 } from 'lucide-react';
 import Header from './Header';
 import { UploadArea, ImageGrid } from './ImageUpload';
@@ -199,25 +199,25 @@ const HomePage = () => {
           <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">
             PDF Sayfa Yönü
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => updateCoverField('orientation', 'portrait')}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                 coverInfo.orientation === 'portrait'
                   ? 'border-orange-500 bg-orange-500/10'
                   : 'border-slate-600 hover:border-slate-500'
               }`}
             >
-              <div className={`w-10 h-14 rounded border-2 ${
+              <div className={`w-8 h-12 rounded border-2 ${
                 coverInfo.orientation === 'portrait'
                   ? 'border-orange-400 bg-orange-500/20'
                   : 'border-slate-500'
               }`}>
-                <Smartphone className={`w-full h-full p-1 ${
+                <Smartphone className={`w-full h-full p-0.5 ${
                   coverInfo.orientation === 'portrait' ? 'text-orange-400' : 'text-slate-500'
                 }`} />
               </div>
-              <span className={`text-sm font-medium ${
+              <span className={`text-xs font-medium ${
                 coverInfo.orientation === 'portrait' ? 'text-orange-400' : 'text-slate-400'
               }`}>
                 Dikey
@@ -225,28 +225,56 @@ const HomePage = () => {
             </button>
             <button
               onClick={() => updateCoverField('orientation', 'landscape')}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                 coverInfo.orientation === 'landscape'
                   ? 'border-orange-500 bg-orange-500/10'
                   : 'border-slate-600 hover:border-slate-500'
               }`}
             >
-              <div className={`w-14 h-10 rounded border-2 ${
+              <div className={`w-12 h-8 rounded border-2 ${
                 coverInfo.orientation === 'landscape'
                   ? 'border-orange-400 bg-orange-500/20'
                   : 'border-slate-500'
               }`}>
-                <Monitor className={`w-full h-full p-1 ${
+                <Monitor className={`w-full h-full p-0.5 ${
                   coverInfo.orientation === 'landscape' ? 'text-orange-400' : 'text-slate-500'
                 }`} />
               </div>
-              <span className={`text-sm font-medium ${
+              <span className={`text-xs font-medium ${
                 coverInfo.orientation === 'landscape' ? 'text-orange-400' : 'text-slate-400'
               }`}>
                 Yatay
               </span>
             </button>
+            <button
+              onClick={() => updateCoverField('orientation', 'auto')}
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                coverInfo.orientation === 'auto'
+                  ? 'border-orange-500 bg-orange-500/10'
+                  : 'border-slate-600 hover:border-slate-500'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded border-2 flex items-center justify-center ${
+                coverInfo.orientation === 'auto'
+                  ? 'border-orange-400 bg-orange-500/20'
+                  : 'border-slate-500'
+              }`}>
+                <Maximize className={`w-5 h-5 ${
+                  coverInfo.orientation === 'auto' ? 'text-orange-400' : 'text-slate-500'
+                }`} />
+              </div>
+              <span className={`text-xs font-medium ${
+                coverInfo.orientation === 'auto' ? 'text-orange-400' : 'text-slate-400'
+              }`}>
+                Otomatik
+              </span>
+            </button>
           </div>
+          {coverInfo.orientation === 'auto' && (
+            <p className="text-xs text-slate-400 mt-3 text-center">
+              Her fotoğrafın boyutuna göre sayfa yönü belirlenir
+            </p>
+          )}
         </Card>
 
         {/* Upload Area */}
