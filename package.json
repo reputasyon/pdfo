@@ -1,12 +1,14 @@
 {
   "name": "pdfo",
   "version": "1.0.0",
+  "type": "module",
   "description": "Fotoğraflardan profesyonel PDF oluşturun",
   "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "serve dist -s -p $PORT",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
@@ -14,7 +16,8 @@
     "react-dom": "^18.2.0",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.263.1",
-    "zustand": "^4.4.7"
+    "zustand": "^4.4.7",
+    "serve": "^14.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
