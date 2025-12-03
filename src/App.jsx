@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SplashScreen, HomePage, SettingsPage, EditorPage, ErrorBoundary } from './components';
+import { SplashScreen, HomePage, SettingsPage, ErrorBoundary } from './components';
 import { useAppStore } from './store';
 import { useOnlineStatus } from './hooks';
 
@@ -48,8 +48,6 @@ function App() {
       {/* Page Router */}
       {currentPage === 'settings' ? (
         <SettingsPage />
-      ) : currentPage === 'editor' ? (
-        <EditorPage />
       ) : (
         <HomePage />
       )}
