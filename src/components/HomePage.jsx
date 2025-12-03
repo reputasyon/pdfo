@@ -1,13 +1,13 @@
 import React from 'react';
-import { 
-  FileImage, Share2, Download, Building2, 
-  ArrowRight, CheckCircle, HardDrive, Loader2 
+import {
+  FileImage, Share2, Download, Image as ImageIcon,
+  ArrowRight, CheckCircle, HardDrive, Loader2
 } from 'lucide-react';
 import Header from './Header';
 import { UploadArea, ImageGrid } from './ImageUpload';
 import QualitySelector from './QualitySelector';
 import { Button, Card, Alert, Modal, ProgressBar } from './ui';
-import { useAppStore, useCompanyStore } from '../store';
+import { useAppStore, useCoverStore } from '../store';
 import { useImages, usePdfGenerator, useJsPDF } from '../hooks';
 import { downloadPDF } from '../utils/pdf';
 
@@ -28,16 +28,16 @@ const HomePage = () => {
     setCurrentPage,
     clearError
   } = useAppStore();
-  
-  const { companyInfo } = useCompanyStore();
+
+  const { coverInfo } = useCoverStore();
   const { images, addImages, removeImage } = useImages();
   const { generatePdf, estimatedSize, isReady: jsPdfReady } = usePdfGenerator();
   const { loading: jsPdfLoading } = useJsPDF();
-  
-  const hasCompanyInfo = companyInfo.name || companyInfo.logo || companyInfo.phone;
+
+  const hasCoverInfo = coverInfo.brandName || coverInfo.logo || coverInfo.whatsapp1;
 
   const handleDownload = () => {
-    downloadPDF(pdfUrl, companyInfo.name);
+    downloadPDF(pdfUrl, coverInfo.brandName);
   };
 
   // Native share function
@@ -48,8 +48,8 @@ const HomePage = () => {
       // Convert blob URL to blob
       const response = await fetch(pdfUrl);
       const blob = await response.blob();
-      const fileName = companyInfo.name
-        ? `${companyInfo.name.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ\s]/g, '')}_katalog.pdf`
+      const fileName = coverInfo.brandName
+        ? `${coverInfo.brandName.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ\s]/g, '')}_katalog.pdf`
         : 'katalog.pdf';
       const file = new File([blob], fileName, { type: 'application/pdf' });
 
@@ -57,7 +57,7 @@ const HomePage = () => {
         await navigator.share({
           files: [file],
           title: fileName,
-          text: companyInfo.name ? `${companyInfo.name} Kataloğu` : 'PDF Kataloğu'
+          text: coverInfo.brandName ? `${coverInfo.brandName} Kataloğu` : 'PDF Kataloğu'
         });
         setShowShareMenu(false);
       } else {
@@ -80,8 +80,8 @@ const HomePage = () => {
     handleDownload();
 
     // Open WhatsApp with a message
-    const message = companyInfo.name
-      ? `${companyInfo.name} Kataloğu - PDF dosyası indirildi, lütfen ekleyin.`
+    const message = coverInfo.brandName
+      ? `${coverInfo.brandName} Kataloğu - PDF dosyası indirildi, lütfen ekleyin.`
       : 'PDF Kataloğu - Dosya indirildi, lütfen ekleyin.';
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -93,8 +93,8 @@ const HomePage = () => {
   const handleTelegramShare = async () => {
     handleDownload();
 
-    const message = companyInfo.name
-      ? `${companyInfo.name} Kataloğu`
+    const message = coverInfo.brandName
+      ? `${coverInfo.brandName} Kataloğu`
       : 'PDF Kataloğu';
 
     const telegramUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
@@ -106,8 +106,8 @@ const HomePage = () => {
   const handleEmailShare = () => {
     handleDownload();
 
-    const subject = companyInfo.name
-      ? `${companyInfo.name} Kataloğu`
+    const subject = coverInfo.brandName
+      ? `${coverInfo.brandName} Kataloğu`
       : 'PDF Kataloğu';
     const body = 'PDF kataloğu ekte bulunmaktadır.';
 
@@ -129,9 +129,9 @@ const HomePage = () => {
       <main className="max-w-lg mx-auto px-4 py-6 pb-32">
         {/* Error Alert */}
         {errorMessage && (
-          <Alert 
-            type="error" 
-            message={errorMessage} 
+          <Alert
+            type="error"
+            message={errorMessage}
             onClose={clearError}
             className="mb-4"
           />
@@ -139,37 +139,37 @@ const HomePage = () => {
 
         {/* jsPDF Loading */}
         {jsPdfLoading && (
-          <Alert 
-            type="warning" 
+          <Alert
+            type="warning"
             message="PDF kütüphanesi yükleniyor..."
             className="mb-4"
           />
         )}
 
-        {/* Company Info Banner */}
-        {hasCompanyInfo ? (
-          <Card 
-            variant="brand" 
+        {/* Cover Info Banner */}
+        {hasCoverInfo ? (
+          <Card
+            variant="brand"
             className="mb-6 flex items-center gap-3"
             onClick={() => setCurrentPage('settings')}
           >
-            {companyInfo.logo ? (
-              <img 
-                src={companyInfo.logo} 
-                alt="Firma logosu" 
-                className="w-12 h-12 object-contain rounded-lg bg-white p-1" 
+            {coverInfo.logo ? (
+              <img
+                src={coverInfo.logo}
+                alt="Kapak logosu"
+                className="w-12 h-12 object-contain rounded-lg bg-white p-1"
               />
             ) : (
               <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-orange-400" />
+                <ImageIcon className="w-6 h-6 text-orange-400" />
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium truncate">
-                {companyInfo.name || 'Firma'}
+                {coverInfo.brandName || 'Kapak'}
               </p>
               <p className="text-slate-400 text-sm truncate">
-                {companyInfo.phone}
+                {coverInfo.subtitle || coverInfo.whatsapp1 || 'Kapak tasarımı hazır'}
               </p>
             </div>
             <span className="text-orange-400 text-sm hover:text-orange-300 whitespace-nowrap">
@@ -177,31 +177,31 @@ const HomePage = () => {
             </span>
           </Card>
         ) : (
-          <Card 
-            variant="warning" 
+          <Card
+            variant="warning"
             className="mb-6 flex items-center gap-3"
             onClick={() => setCurrentPage('settings')}
           >
             <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-6 h-6 text-orange-400" />
+              <ImageIcon className="w-6 h-6 text-orange-400" />
             </div>
             <div className="flex-1">
-              <p className="text-orange-300 font-medium">Firma Bilgilerini Ekle</p>
-              <p className="text-orange-400/70 text-sm">PDF kapak sayfası için</p>
+              <p className="text-orange-300 font-medium">Kapak Tasarımını Ayarla</p>
+              <p className="text-orange-400/70 text-sm">Marka adı, logo ve iletişim bilgileri</p>
             </div>
             <ArrowRight className="w-5 h-5 text-orange-400 flex-shrink-0" />
           </Card>
         )}
 
         {/* Upload Area */}
-        <UploadArea 
-          onUpload={addImages} 
+        <UploadArea
+          onUpload={addImages}
           disabled={isConverting}
         />
 
         {/* Image Grid */}
-        <ImageGrid 
-          images={images} 
+        <ImageGrid
+          images={images}
           onRemove={removeImage}
           onAddMore={addImages}
         />
@@ -238,7 +238,7 @@ const HomePage = () => {
               <div>
                 <p className="text-white font-medium">PDF Oluşturuluyor...</p>
                 <p className="text-slate-400 text-sm">
-                  {conversionProgress < 10 
+                  {conversionProgress < 10
                     ? 'Kapak sayfası hazırlanıyor'
                     : `Fotoğraflar işleniyor`
                   }
@@ -300,7 +300,7 @@ const HomePage = () => {
             onSelectQuality={setSelectedQuality}
             estimatedSize={estimatedSize}
           />
-          
+
           <Button
             onClick={generatePdf}
             fullWidth
@@ -309,7 +309,7 @@ const HomePage = () => {
             <FileImage className="w-5 h-5" />
             PDF Oluştur
           </Button>
-          
+
           <Button
             onClick={() => setShowQualityModal(false)}
             variant="secondary"
@@ -329,7 +329,7 @@ const HomePage = () => {
         <p className="text-slate-400 text-sm text-center mb-6 -mt-4">
           Boyut: {pdfSize}
         </p>
-        
+
         <div className="grid grid-cols-4 gap-4 mb-6">
           {shareOptions.map((option) => (
             <button
@@ -344,7 +344,7 @@ const HomePage = () => {
             </button>
           ))}
         </div>
-        
+
         <Button
           onClick={() => setShowShareMenu(false)}
           variant="secondary"

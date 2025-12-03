@@ -1,21 +1,21 @@
 // Quality settings for PDF generation
 export const QUALITY_SETTINGS = {
-  low: { 
-    compression: 0.4, 
+  low: {
+    compression: 0.4,
     scale: 0.5,
     label: 'Düşük',
     description: 'Küçük boyut, hızlı paylaşım',
     estimateMultiplier: 0.3
   },
-  medium: { 
-    compression: 0.7, 
+  medium: {
+    compression: 0.7,
     scale: 0.75,
     label: 'Orta',
     description: 'Dengeli kalite ve boyut',
     estimateMultiplier: 0.6
   },
-  high: { 
-    compression: 0.95, 
+  high: {
+    compression: 0.95,
     scale: 1,
     label: 'Yüksek',
     description: 'En iyi kalite, büyük boyut',
@@ -34,14 +34,14 @@ export const formatFileSize = (bytes) => {
 // Estimate PDF size based on images and quality
 export const estimatePdfSize = (images, quality) => {
   if (!images || images.length === 0) return null;
-  
+
   const baseSize = images.reduce((total, img) => {
     return total + (img.size || 200000); // Default 200KB if size unknown
   }, 0);
-  
+
   const multiplier = QUALITY_SETTINGS[quality]?.estimateMultiplier || 0.6;
   const estimated = baseSize * multiplier;
-  
+
   return formatFileSize(estimated);
 };
 
@@ -49,29 +49,29 @@ export const estimatePdfSize = (images, quality) => {
 export const loadImageAsDataUrl = (src, quality = 'medium') => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    
+
     img.onload = () => {
       try {
         const settings = QUALITY_SETTINGS[quality];
         const canvas = document.createElement('canvas');
-        
+
         // Apply scale
         canvas.width = Math.round(img.width * settings.scale);
         canvas.height = Math.round(img.height * settings.scale);
-        
+
         const ctx = canvas.getContext('2d');
-        
+
         // Enable image smoothing for better quality
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        
+
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
+
         const dataUrl = canvas.toDataURL('image/jpeg', settings.compression);
-        
-        resolve({ 
-          dataUrl, 
-          width: canvas.width, 
+
+        resolve({
+          dataUrl,
+          width: canvas.width,
           height: canvas.height,
           originalWidth: img.width,
           originalHeight: img.height
@@ -80,7 +80,7 @@ export const loadImageAsDataUrl = (src, quality = 'medium') => {
         reject(new Error('Resim işlenemedi: ' + err.message));
       }
     };
-    
+
     img.onerror = () => reject(new Error('Resim yüklenemedi'));
     img.src = src;
   });
@@ -97,7 +97,7 @@ export const loadJsPDF = () => {
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     script.async = true;
-    
+
     script.onload = () => {
       if (window.jspdf) {
         resolve(window.jspdf);
@@ -105,118 +105,140 @@ export const loadJsPDF = () => {
         reject(new Error('jsPDF yüklenemedi'));
       }
     };
-    
+
     script.onerror = () => reject(new Error('jsPDF kütüphanesi yüklenemedi'));
-    
+
     document.body.appendChild(script);
   });
 };
 
+// Convert hex color to RGB
+const hexToRgb = (hex) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 255, g: 255, b: 255 };
+};
+
 // Generate PDF with cover page and images
-export const generatePDF = async (images, companyInfo, quality, onProgress) => {
+export const generatePDF = async (images, coverInfo, quality, onProgress) => {
   const { jsPDF } = await loadJsPDF();
-  
+
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 10;
-  
+
   const totalSteps = images.length + 1; // +1 for cover page
   let currentStep = 0;
 
+  // Get colors from coverInfo
+  const bgColor = hexToRgb(coverInfo.backgroundColor || '#ffffff');
+  const brandColor = hexToRgb(coverInfo.brandColor || '#e91e8c');
+  const textColor = hexToRgb(coverInfo.textColor || '#333333');
+
   // === COVER PAGE ===
   onProgress?.(0);
-  
+
   // Background
-  pdf.setFillColor(250, 250, 255);
+  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-  
-  // Header bar
-  pdf.setFillColor(249, 115, 22);
-  pdf.rect(0, 0, pageWidth, 8, 'F');
-  
-  let yPos = 50;
+
+  let yPos = pageHeight * 0.35; // Start at ~35% from top
 
   // Company Logo
-  if (companyInfo.logo) {
+  if (coverInfo.logo) {
     try {
-      const logoData = await loadImageAsDataUrl(companyInfo.logo, 'high');
-      const maxLogoWidth = 50;
-      const maxLogoHeight = 35;
-      
+      const logoData = await loadImageAsDataUrl(coverInfo.logo, 'high');
+      const maxLogoWidth = 80;
+      const maxLogoHeight = 50;
+
       const ratio = Math.min(maxLogoWidth / logoData.width, maxLogoHeight / logoData.height);
       const logoW = logoData.width * ratio;
       const logoH = logoData.height * ratio;
-      
+
       const logoX = (pageWidth - logoW) / 2;
-      pdf.addImage(logoData.dataUrl, 'JPEG', logoX, yPos, logoW, logoH);
-      yPos += logoH + 15;
+      pdf.addImage(logoData.dataUrl, 'JPEG', logoX, yPos - logoH - 10, logoW, logoH);
     } catch (e) {
       console.warn('Logo eklenemedi:', e);
-      yPos += 10;
     }
   }
 
-  // Company Name
-  if (companyInfo.name) {
+  // Brand Name (like F-MOR)
+  if (coverInfo.brandName) {
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(22);
-    pdf.setTextColor(30, 30, 60);
-    pdf.text(companyInfo.name, pageWidth / 2, yPos, { align: 'center' });
+    pdf.setFontSize(48);
+    pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
+    pdf.text(coverInfo.brandName, pageWidth / 2, yPos, { align: 'center' });
     yPos += 12;
   }
 
-  // Divider
-  if (companyInfo.name || companyInfo.logo) {
-    pdf.setDrawColor(249, 115, 22);
-    pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 4, yPos, (pageWidth * 3) / 4, yPos);
-    yPos += 15;
+  // Subtitle (like COLLECTION CATALOGUE)
+  if (coverInfo.subtitle) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(14);
+    pdf.setTextColor(brandColor.r, brandColor.g, brandColor.b);
+    // Add letter spacing effect by splitting and rejoining with spaces
+    const spacedSubtitle = coverInfo.subtitle.toUpperCase().split('').join(' ');
+    pdf.text(spacedSubtitle, pageWidth / 2, yPos + 5, { align: 'center' });
+    yPos += 20;
   }
 
-  // Contact Info
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(10);
-  pdf.setTextColor(60, 60, 80);
+  // Contact Info at bottom
+  const contactY = pageHeight - 35;
+  const hasContactInfo = coverInfo.whatsapp1 || coverInfo.whatsapp2 || coverInfo.instagram || coverInfo.telegram;
 
-  const contactFields = [
-    { value: companyInfo.phone, prefix: 'Tel: ' },
-    { value: companyInfo.email, prefix: 'E-posta: ' },
-    { value: companyInfo.website, prefix: 'Web: ' },
-    { value: companyInfo.address, prefix: 'Adres: ', maxWidth: pageWidth - 40 }
-  ];
+  if (hasContactInfo) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(textColor.r, textColor.g, textColor.b);
 
-  contactFields.forEach(field => {
-    if (field.value) {
-      pdf.text(
-        field.prefix + field.value, 
-        pageWidth / 2, 
-        yPos, 
-        { align: 'center', maxWidth: field.maxWidth }
-      );
-      yPos += 7;
+    let contactX = margin + 20;
+    const contactSpacing = 55;
+
+    // Calculate how many contact items we have
+    const contacts = [];
+    if (coverInfo.whatsapp1 || coverInfo.whatsapp2) {
+      const phones = [coverInfo.whatsapp1, coverInfo.whatsapp2].filter(Boolean);
+      contacts.push({ type: 'whatsapp', values: phones });
     }
-  });
+    if (coverInfo.instagram) {
+      contacts.push({ type: 'instagram', value: coverInfo.instagram });
+    }
+    if (coverInfo.telegram) {
+      contacts.push({ type: 'telegram', value: coverInfo.telegram });
+    }
 
-  // Footer info
-  pdf.setFontSize(9);
-  pdf.setTextColor(120, 120, 140);
-  const today = new Date().toLocaleDateString('tr-TR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  const qualityLabel = QUALITY_SETTINGS[quality]?.label || 'Orta';
-  pdf.text(
-    `Tarih: ${today} | ${images.length} Fotoğraf | Kalite: ${qualityLabel}`, 
-    pageWidth / 2, 
-    pageHeight - 20, 
-    { align: 'center' }
-  );
+    // Center the contacts
+    const totalWidth = contacts.length * contactSpacing;
+    contactX = (pageWidth - totalWidth) / 2 + contactSpacing / 2;
 
-  // Footer bar
-  pdf.setFillColor(249, 115, 22);
-  pdf.rect(0, pageHeight - 8, pageWidth, 8, 'F');
+    contacts.forEach((contact, index) => {
+      const x = contactX + (index * contactSpacing);
+
+      // Draw colored circle for icon
+      if (contact.type === 'whatsapp') {
+        pdf.setFillColor(37, 211, 102); // WhatsApp green
+        pdf.circle(x - 15, contactY, 5, 'F');
+        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+        contact.values.forEach((phone, i) => {
+          pdf.text(phone, x - 5, contactY + 1 + (i * 5), { align: 'left' });
+        });
+      } else if (contact.type === 'instagram') {
+        pdf.setFillColor(225, 48, 108); // Instagram pink
+        pdf.circle(x - 15, contactY, 5, 'F');
+        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+        pdf.text(contact.value, x - 5, contactY + 1, { align: 'left' });
+      } else if (contact.type === 'telegram') {
+        pdf.setFillColor(0, 136, 204); // Telegram blue
+        pdf.circle(x - 15, contactY, 5, 'F');
+        pdf.setTextColor(textColor.r, textColor.g, textColor.b);
+        pdf.text(contact.value, x - 5, contactY + 1, { align: 'left' });
+      }
+    });
+  }
 
   currentStep++;
   onProgress?.(Math.round((currentStep / totalSteps) * 100));
@@ -224,18 +246,22 @@ export const generatePDF = async (images, companyInfo, quality, onProgress) => {
   // === PHOTO PAGES ===
   for (let i = 0; i < images.length; i++) {
     pdf.addPage();
-    
+
+    // White background for photos
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
     try {
       const imgData = await loadImageAsDataUrl(images[i].preview, quality);
-      
+
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2) - 10;
-      
+
       const imgRatio = imgData.width / imgData.height;
       const pageRatio = availableWidth / availableHeight;
-      
+
       let finalWidth, finalHeight;
-      
+
       if (imgRatio > pageRatio) {
         finalWidth = availableWidth;
         finalHeight = availableWidth / imgRatio;
@@ -243,10 +269,10 @@ export const generatePDF = async (images, companyInfo, quality, onProgress) => {
         finalHeight = availableHeight;
         finalWidth = availableHeight * imgRatio;
       }
-      
+
       const x = (pageWidth - finalWidth) / 2;
       const y = (pageHeight - finalHeight) / 2 - 5;
-      
+
       pdf.addImage(imgData.dataUrl, 'JPEG', x, y, finalWidth, finalHeight);
     } catch (imgErr) {
       console.error('Resim eklenemedi:', imgErr);
@@ -259,15 +285,15 @@ export const generatePDF = async (images, companyInfo, quality, onProgress) => {
     pdf.setFontSize(9);
     pdf.setTextColor(150, 150, 150);
     pdf.text(`${i + 1} / ${images.length}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
-    
+
     currentStep++;
     onProgress?.(Math.round((currentStep / totalSteps) * 100));
   }
-  
+
   // Generate blob
   const blob = pdf.output('blob');
   const url = URL.createObjectURL(blob);
-  
+
   return {
     url,
     blob,
@@ -278,14 +304,14 @@ export const generatePDF = async (images, companyInfo, quality, onProgress) => {
 };
 
 // Download PDF
-export const downloadPDF = (pdfUrl, companyName) => {
+export const downloadPDF = (pdfUrl, brandName) => {
   if (!pdfUrl) return;
-  
+
   const timestamp = Date.now();
-  const fileName = companyName 
-    ? `${companyName.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]/g, '_')}_${timestamp}.pdf`
+  const fileName = brandName
+    ? `${brandName.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]/g, '_')}_${timestamp}.pdf`
     : `pdfo_${timestamp}.pdf`;
-  
+
   const link = document.createElement('a');
   link.href = pdfUrl;
   link.download = fileName;
@@ -295,19 +321,19 @@ export const downloadPDF = (pdfUrl, companyName) => {
 };
 
 // Share PDF (Web Share API)
-export const sharePDF = async (pdfUrl, pdfBlob, companyName) => {
-  const fileName = companyName 
-    ? `${companyName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+export const sharePDF = async (pdfUrl, pdfBlob, brandName) => {
+  const fileName = brandName
+    ? `${brandName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
     : 'pdfo.pdf';
-  
+
   const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-  
+
   if (navigator.share && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
         files: [file],
         title: 'PDF Dosyası',
-        text: companyName ? `${companyName} - PDF Belgesi` : 'Pdfo ile oluşturuldu'
+        text: brandName ? `${brandName} - PDF Belgesi` : 'Pdfo ile oluşturuldu'
       });
       return true;
     } catch (error) {
@@ -317,8 +343,8 @@ export const sharePDF = async (pdfUrl, pdfBlob, companyName) => {
       return false;
     }
   }
-  
+
   // Fallback to download
-  downloadPDF(pdfUrl, companyName);
+  downloadPDF(pdfUrl, brandName);
   return true;
 };
