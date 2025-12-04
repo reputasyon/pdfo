@@ -134,29 +134,70 @@ const createSocialIcon = (type, size = 64) => {
     const centerY = size / 2;
     const radius = size / 2;
 
-    // Draw circle background
-    ctx.beginPath();
     if (type === 'whatsapp') {
+      // WhatsApp green circle with speech bubble phone
       ctx.fillStyle = '#25D366';
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.95, 0, Math.PI * 2);
       ctx.fill();
-      // Draw WhatsApp phone icon
+
+      // Draw speech bubble shape
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${size * 0.5}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('📞', centerX, centerY);
+      ctx.beginPath();
+      const bubbleRadius = radius * 0.65;
+      ctx.arc(centerX, centerY - size * 0.02, bubbleRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Speech bubble tail
+      ctx.beginPath();
+      ctx.moveTo(centerX - size * 0.15, centerY + size * 0.25);
+      ctx.lineTo(centerX - size * 0.3, centerY + size * 0.4);
+      ctx.lineTo(centerX + size * 0.05, centerY + size * 0.3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Green inner circle for phone
+      ctx.fillStyle = '#25D366';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY - size * 0.02, bubbleRadius * 0.75, 0, Math.PI * 2);
+      ctx.fill();
+
+      // White phone icon
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      const phoneSize = size * 0.35;
+      ctx.save();
+      ctx.translate(centerX, centerY - size * 0.02);
+      ctx.rotate(-0.1);
+      // Phone handset
+      ctx.beginPath();
+      ctx.moveTo(-phoneSize * 0.4, -phoneSize * 0.3);
+      ctx.quadraticCurveTo(-phoneSize * 0.5, 0, -phoneSize * 0.35, phoneSize * 0.35);
+      ctx.lineTo(-phoneSize * 0.15, phoneSize * 0.2);
+      ctx.quadraticCurveTo(0, 0, phoneSize * 0.2, -phoneSize * 0.15);
+      ctx.lineTo(phoneSize * 0.35, -phoneSize * 0.35);
+      ctx.quadraticCurveTo(0, -phoneSize * 0.5, -phoneSize * 0.3, -phoneSize * 0.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
     } else if (type === 'instagram') {
-      // Instagram gradient
-      const gradient = ctx.createLinearGradient(0, 0, size, size);
-      gradient.addColorStop(0, '#f09433');
-      gradient.addColorStop(0.25, '#e6683c');
-      gradient.addColorStop(0.5, '#dc2743');
-      gradient.addColorStop(0.75, '#cc2366');
-      gradient.addColorStop(1, '#bc1888');
+      // Instagram gradient rounded square
+      const gradient = ctx.createRadialGradient(
+        size * 0.3, size * 1.1, size * 0.1,
+        size * 0.3, size * 0.9, size * 1.4
+      );
+      gradient.addColorStop(0, '#ffdc80');
+      gradient.addColorStop(0.1, '#fcaf45');
+      gradient.addColorStop(0.25, '#f77737');
+      gradient.addColorStop(0.4, '#f56040');
+      gradient.addColorStop(0.55, '#fd1d1d');
+      gradient.addColorStop(0.7, '#e1306c');
+      gradient.addColorStop(0.85, '#c13584');
+      gradient.addColorStop(1, '#833ab4');
+
       ctx.fillStyle = gradient;
-      // Rounded square for Instagram
-      const cornerRadius = size * 0.2;
+      const cornerRadius = size * 0.22;
       ctx.beginPath();
       ctx.moveTo(cornerRadius, 0);
       ctx.lineTo(size - cornerRadius, 0);
@@ -168,37 +209,63 @@ const createSocialIcon = (type, size = 64) => {
       ctx.lineTo(0, cornerRadius);
       ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
       ctx.fill();
-      // Draw camera icon
+
+      // White rounded rect border inside
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = size * 0.06;
-      const inset = size * 0.2;
-      // Outer rounded rect
+      const inset = size * 0.18;
+      const innerCorner = size * 0.12;
       ctx.beginPath();
-      ctx.roundRect(inset, inset, size - inset * 2, size - inset * 2, size * 0.1);
+      ctx.moveTo(inset + innerCorner, inset);
+      ctx.lineTo(size - inset - innerCorner, inset);
+      ctx.quadraticCurveTo(size - inset, inset, size - inset, inset + innerCorner);
+      ctx.lineTo(size - inset, size - inset - innerCorner);
+      ctx.quadraticCurveTo(size - inset, size - inset, size - inset - innerCorner, size - inset);
+      ctx.lineTo(inset + innerCorner, size - inset);
+      ctx.quadraticCurveTo(inset, size - inset, inset, size - inset - innerCorner);
+      ctx.lineTo(inset, inset + innerCorner);
+      ctx.quadraticCurveTo(inset, inset, inset + innerCorner, inset);
       ctx.stroke();
-      // Center circle
+
+      // Center circle (lens)
       ctx.beginPath();
       ctx.arc(centerX, centerY, size * 0.2, 0, Math.PI * 2);
       ctx.stroke();
-      // Small circle top right
+
+      // Small circle top right (flash)
       ctx.beginPath();
-      ctx.arc(size - inset - size * 0.12, inset + size * 0.12, size * 0.05, 0, Math.PI * 2);
+      ctx.arc(size - inset - size * 0.1, inset + size * 0.1, size * 0.055, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
+
     } else if (type === 'telegram') {
-      ctx.fillStyle = '#0088cc';
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      // Telegram blue circle
+      ctx.fillStyle = '#27A7E7';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.95, 0, Math.PI * 2);
       ctx.fill();
+
       // Draw paper plane
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      const planeSize = size * 0.5;
-      const startX = centerX - planeSize * 0.4;
-      const startY = centerY;
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(startX + planeSize, startY - planeSize * 0.3);
-      ctx.lineTo(startX + planeSize * 0.4, startY + planeSize * 0.4);
-      ctx.lineTo(startX + planeSize * 0.5, startY);
+      const planeScale = size * 0.45;
+      // Main paper plane shape
+      ctx.moveTo(centerX - planeScale * 0.55, centerY - planeScale * 0.05);
+      ctx.lineTo(centerX + planeScale * 0.5, centerY - planeScale * 0.55);
+      ctx.lineTo(centerX + planeScale * 0.1, centerY + planeScale * 0.05);
+      ctx.lineTo(centerX - planeScale * 0.05, centerY + planeScale * 0.5);
+      ctx.lineTo(centerX - planeScale * 0.05, centerY + planeScale * 0.1);
+      ctx.lineTo(centerX + planeScale * 0.15, centerY - planeScale * 0.05);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner fold shadow
+      ctx.fillStyle = '#D2E9F5';
+      ctx.beginPath();
+      ctx.moveTo(centerX + planeScale * 0.1, centerY + planeScale * 0.05);
+      ctx.lineTo(centerX - planeScale * 0.05, centerY + planeScale * 0.5);
+      ctx.lineTo(centerX - planeScale * 0.05, centerY + planeScale * 0.1);
+      ctx.lineTo(centerX + planeScale * 0.15, centerY - planeScale * 0.05);
       ctx.closePath();
       ctx.fill();
     }
@@ -229,7 +296,7 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
 
   // Get colors from coverInfo
   const bgColor = hexToRgb(coverInfo.backgroundColor || '#ffffff');
-  const brandColor = hexToRgb(coverInfo.brandColor || '#e91e8c');
+  const brandColor = hexToRgb(coverInfo.brandColor || '#000000');
   const textColor = hexToRgb(coverInfo.textColor || '#333333');
 
   // Determine cover page orientation
@@ -295,12 +362,12 @@ export const generatePDF = async (images, coverInfo, quality, onProgress) => {
     // Add letter spacing effect
     const spacedSubtitle = coverInfo.subtitle.toUpperCase().split('').join(' ');
     pdf.text(spacedSubtitle, pageWidth / 2, yPos + 5, { align: 'center' });
-    yPos += 20;
+    yPos += 25;
   }
 
-  // Contact Info at bottom with proper icons
-  const contactY = pageHeight - (coverOrientation === 'l' ? 25 : 30);
+  // Contact Info directly below brand name and subtitle
   const hasContactInfo = coverInfo.whatsapp1 || coverInfo.whatsapp2 || coverInfo.instagram || coverInfo.telegram;
+  const contactY = yPos + 10; // Position right after brand name/subtitle
 
   if (hasContactInfo) {
     const iconSize = coverOrientation === 'l' ? 12 : 10;
