@@ -139,7 +139,7 @@ export const useCoverStore = create(
         instagram: '',
         telegram: '',
         backgroundColor: '#ffffff',
-        brandColor: '#e91e8c',
+        brandColor: '#000000',
         textColor: '#333333',
         orientation: 'portrait' // 'portrait' or 'landscape'
       },
@@ -158,7 +158,7 @@ export const useCoverStore = create(
           instagram: '',
           telegram: '',
           backgroundColor: '#ffffff',
-          brandColor: '#e91e8c',
+          brandColor: '#000000',
           textColor: '#333333',
           orientation: 'portrait'
         }
